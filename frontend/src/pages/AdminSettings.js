@@ -10,7 +10,6 @@ const AdminSettings = () => {
     operatingDays: [],
     operatingHours: { start: '08:00', end: '17:00' },
     maxSlotsPerDay: 30,
-    allowWalkIn: true,
     cancellationDeadline: 120
   });
   const [loading, setLoading] = useState(false);
@@ -43,7 +42,6 @@ const AdminSettings = () => {
         operatingDays: settings.operatingDays || [],
         operatingHours: settings.operatingHours || { start: '08:00', end: '17:00' },
         maxSlotsPerDay: settings.maxSlotsPerDay || 30,
-        allowWalkIn: settings.allowWalkIn || true,
         cancellationDeadline: settings.cancellationDeadline || 120
       });
     } catch (error) {
@@ -63,11 +61,6 @@ const AdminSettings = () => {
           ...prev[field],
           [subfield]: value
         }
-      }));
-    } else if (type === 'checkbox' && name === 'allowWalkIn') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: checked
       }));
     } else {
       setFormData(prev => ({
@@ -282,18 +275,6 @@ const AdminSettings = () => {
                 </p>
               </div>
               
-              <div className="md:col-span-2">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="allowWalkIn"
-                    checked={formData.allowWalkIn}
-                    onChange={handleChange}
-                    className="form-checkbox"
-                  />
-                  <span>Izinkan pasien walk-in (tanpa janji)</span>
-                </label>
-              </div>
             </div>
           </div>
 

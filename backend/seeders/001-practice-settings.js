@@ -13,15 +13,15 @@ module.exports = {
 
     await queryInterface.bulkInsert('practice_settings', [{
       id: Sequelize.literal('gen_random_uuid()'),
-      doctorName: 'Dr. Ahmad Pratama',
-      practiceName: 'Klinik Sehat Bersama',
-      practiceAddress: 'Jl. Kesehatan No. 123, Jakarta Selatan',
-      practicePhone: '(021) 1234-5678',
-      operatingDays: JSON.stringify([0, 1, 2, 3, 4, 5, 6]), // All days
+      doctorName: 'Dr. Nama Dokter',
+      practiceName: 'Nama Praktik',
+      practiceAddress: 'Alamat Praktik',
+      practicePhone: '(000) 0000-0000',
+      operatingDays: JSON.stringify([1, 2, 3, 4, 5, 6]), // Monday to Saturday (exclude Sunday=0)
       operatingHours: JSON.stringify({ start: '08:00', end: '17:00' }),
-      maxSlotsPerDay: 50,
+      maxSlotsPerDay: 30,
       allowWalkIn: false,
-      cancellationDeadline: 30,
+      cancellationDeadline: 120,
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date()

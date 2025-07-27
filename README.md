@@ -1,26 +1,30 @@
-# AntreDokter - Sistema Antrian Dokter
+# AntreDokter - Sistem Antrian Dokter Online
 
-Sistem manajemen antrian online untuk praktik dokter dengan antarmuka web untuk pasien, admin/resepsionis, dan dokter.
+Aplikasi web untuk mengelola antrian pasien dokter dengan fitur real-time notification dan laporan komprehensif.
 
 ## Fitur Utama
 
-### Modul Pasien
+### 🏥 Modul Pasien
 - Pendaftaran dan login akun pasien
-- Pemesanan antrean online
-- Melihat status antrean real-time
-- Riwayat pemesanan
-- Pembatalan antrean
-- Notifikasi (WhatsApp/SMS - opsional)
+- Pemesanan antrian online
+- Melihat status antrian real-time
+- Riwayat pemesanan lengkap
+- Pembatalan antrian
+- Notifikasi real-time
 
-### Modul Admin/Resepsionis
+### 👨‍💼 Modul Admin/Resepsionis
 - Manajemen pasien
-- Manajemen antrean
-- Dashboard real-time
+- Manajemen antrian real-time
+- Dashboard dengan statistik
+- Laporan periode dengan filter tanggal
 - Pengaturan praktik
+- Emergency closure system
+- Kalender antrian
 
-### Modul Dokter
-- Melihat daftar antrean harian
-- Mengatur status pasien
+### 👨‍⚕️ Modul Dokter
+- Melihat daftar antrian harian
+- Mengatur status pasien (panggil, selesai, batal)
+- Monitoring real-time queue
 
 ## Struktur Proyek
 
@@ -34,27 +38,92 @@ AntreDokter/
 
 ## Tech Stack
 
-- **Frontend**: React.js, Tailwind CSS
-- **Backend**: Node.js, Express.js
-- **Database**: PostgreSQL
-- **Authentication**: JWT
-- **Real-time**: Socket.io
+### Backend
+- **Node.js** + Express.js
+- **PostgreSQL** + Sequelize ORM
+- **JWT** Authentication
+- **Socket.IO** untuk real-time updates
+- **Helmet** + CORS untuk security
 
-## Setup Development
+### Frontend
+- **React.js** 19 + React Router
+- **Tailwind CSS** untuk styling
+- **Axios** untuk API calls
+- **Socket.IO** client
 
-Lihat dokumentasi di folder `docs/` untuk panduan setup lengkap.
+## Quick Start
 
-# 1. Reset database (drop & create fresh)
-  npm run db:reset
+### Prerequisites
+- Node.js 18+
+- PostgreSQL 12+
 
-  # 2. Run migrations (create tables)
-  npm run db:migrate
+### Installation
 
-  # 3. Run seeders (insert initial data)
-  npm run db:seed
+1. **Backend Setup**
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Edit .env dengan konfigurasi database
 
-  # 4. Start server
-  npm run dev
+# Setup database (clean production-ready)
+npm run db:setup  # Reset + migrate + seed (admin + practice settings only)
 
-  Atau singkat dengan satu command:
-  # npm run db:setup
+npm run dev       # Start development server
+```
+
+2. **Frontend Setup**
+```bash
+cd frontend
+npm install
+cp .env.example .env
+# Edit .env dengan API URL
+
+npm start         # Start React development
+```
+
+3. **Access Application**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5001
+
+### Default Admin Login
+- **Phone**: 08123456789
+- **Password**: Admin123!
+
+## Production Deployment
+
+```bash
+# Backend Production Setup
+cd backend
+npm install --production
+cp .env.example .env  # Configure with production values
+npm run db:setup      # Clean setup: admin + practice settings only
+npm start
+
+# Frontend Production Build
+cd frontend
+npm install
+cp .env.example .env  # Configure with production API URL
+npm run build
+# Serve build/ folder with web server (nginx/apache)
+```
+
+### Environment Variables
+
+**Backend (.env):**
+```
+PORT=5001
+NODE_ENV=production
+DB_HOST=your-db-host
+DB_NAME=your-db-name
+DB_USER=your-db-user
+DB_PASSWORD=your-db-password
+JWT_SECRET=your-secure-jwt-secret
+CORS_ORIGIN=https://your-frontend-domain.com
+```
+
+**Frontend (.env):**
+```
+REACT_APP_API_URL=https://your-api-domain.com/api
+GENERATE_SOURCEMAP=false
+```

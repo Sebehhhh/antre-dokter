@@ -78,6 +78,13 @@ const PatientHistory = () => {
         label: 'Dibatalkan',
         color: 'red'
       },
+      emergency_cancelled: { 
+        bg: 'bg-orange-50 border-orange-200', 
+        text: 'text-orange-700', 
+        icon: '⚠️', 
+        label: 'Dibatalkan (Darurat)',
+        color: 'orange'
+      },
       no_show: { 
         bg: 'bg-gray-50 border-gray-200', 
         text: 'text-gray-700', 

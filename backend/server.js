@@ -10,6 +10,8 @@ const { sequelize } = require('./src/models');
 const authRoutes = require('./src/routes/authRoutes');
 const queueRoutes = require('./src/routes/queueRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
+const emergencyRoutes = require('./src/routes/emergencyRoutes');
+const notificationRoutes = require('./src/routes/notificationRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -65,6 +67,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api/auth', isProduction ? authLimiter : (req, res, next) => next(), authRoutes);
 app.use('/api/queue', queueRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/emergency', emergencyRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ 

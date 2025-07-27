@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { queueAPI } from '../utils/api';
+import { getWitaDateString, addDaysToWitaDate } from '../utils/timezone';
 
 const BookQueue = () => {
   const [formData, setFormData] = useState({
@@ -13,10 +14,8 @@ const BookQueue = () => {
   
   const navigate = useNavigate();
 
-  const today = new Date().toISOString().split('T')[0];
-  const maxDate = new Date();
-  maxDate.setDate(maxDate.getDate() + 30);
-  const maxDateString = maxDate.toISOString().split('T')[0];
+  const today = getWitaDateString();
+  const maxDateString = addDaysToWitaDate(30);
 
   useEffect(() => {
     if (formData.appointmentDate) {

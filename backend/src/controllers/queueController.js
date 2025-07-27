@@ -1,6 +1,13 @@
-const { Queue, User, PracticeSettings, ActivityLog } = require('../models');
+const { Queue, User, PracticeSettings, ActivityLog, EmergencyClosure } = require('../models');
 const { Op } = require('sequelize');
 const { logActivity } = require('../utils/activityLogger');
+
+// Helper function to get current date in WITA timezone
+const getWitaDateString = () => {
+  const now = new Date();
+  const witaTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // UTC+8
+  return witaTime.toISOString().split('T')[0];
+};
 
 const getAvailableSlots = async (req, res) => {
   try {
@@ -23,11 +30,76 @@ const getAvailableSlots = async (req, res) => {
 
     const requestDate = new Date(date);
     const dayOfWeek = requestDate.getDay();
+    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+    // Check for emergency closure (handle gracefully if table doesn't exist)
+    let emergencyClosure = null;
+    try {
+      emergencyClosure = await EmergencyClosure.findOne({
+        where: {
+          closureDate: date,
+          isActive: true
+        },
+        include: [{ model: User, as: 'creator', attributes: ['fullName'] }]
+      });
+    } catch (error) {
+      console.log('Emergency closure table not available yet:', error.message);
+    }
+
+    if (emergencyClosure) {
+      // Get affected queues count
+      let affectedQueuesCount = 0;
+      try {
+        affectedQueuesCount = await Queue.count({
+          where: {
+            appointmentDate: date,
+            status: 'emergency_cancelled'
+          }
+        });
+      } catch (error) {
+        console.log('Could not count emergency cancelled queues:', error.message);
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          date,
+          isOperatingDay: true,
+          isEmergencyClosure: true,
+          emergencyClosure: {
+            reason: emergencyClosure.reason,
+            createdBy: emergencyClosure.creator.fullName,
+            createdAt: emergencyClosure.createdAt,
+            affectedQueuesCount
+          },
+          maxSlots: settings.maxSlotsPerDay,
+          availableSlots: 0,
+          totalBooked: affectedQueuesCount,
+          operatingHours: settings.operatingHours,
+          operatingDays: settings.operatingDays,
+          message: `Praktik ditutup darurat: ${emergencyClosure.reason}`
+        }
+      });
+    }
 
     if (!settings.operatingDays.includes(dayOfWeek)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Praktik tidak beroperasi pada hari tersebut'
+      const operatingDayNames = settings.operatingDays.map(day => dayNames[day]);
+      
+      return res.json({
+        success: true,
+        data: {
+          date,
+          isOperatingDay: false,
+          isEmergencyClosure: false,
+          dayOfWeek: dayNames[dayOfWeek],
+          operatingDays: settings.operatingDays,
+          operatingDayNames,
+          operatingHours: settings.operatingHours,
+          maxSlots: settings.maxSlotsPerDay,
+          availableSlots: 0,
+          totalBooked: 0,
+          message: `Praktik tidak beroperasi pada hari ${dayNames[dayOfWeek]}. Hari operasional: ${operatingDayNames.join(', ')}`
+        }
       });
     }
 
@@ -48,6 +120,8 @@ const getAvailableSlots = async (req, res) => {
       success: true,
       data: {
         date,
+        isOperatingDay: true,
+        isEmergencyClosure: false,
         availableSlots: Math.max(0, availableSlots),
         maxSlots: settings.maxSlotsPerDay,
         totalBooked,
@@ -164,7 +238,7 @@ const getMyQueues = async (req, res) => {
 
 const getCurrentQueue = async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getWitaDateString();
     
     const currentQueue = await Queue.findOne({
       where: {
@@ -224,7 +298,7 @@ const cancelQueue = async (req, res) => {
     }
 
     // Check if it's still possible to cancel (e.g., not on the same day or past operating hours)
-    const today = new Date().toISOString().split('T')[0];
+    const today = getWitaDateString();
     const appointmentDate = queue.appointmentDate;
     
     // Allow cancellation if appointment is not today, or if it's today but still early
@@ -274,7 +348,7 @@ const cancelQueue = async (req, res) => {
 
 const callNextQueue = async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getWitaDateString();
     
     // Check if there's already a queue in service
     const currentQueue = await Queue.findOne({
@@ -542,6 +616,211 @@ const getQueuesByDate = async (req, res) => {
   }
 };
 
+const bookQueueForPatient = async (req, res) => {
+  try {
+    const { appointmentDate, patientId, notes } = req.body;
+
+    if (!appointmentDate || !patientId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Parameter appointmentDate dan patientId diperlukan'
+      });
+    }
+
+    // Check if patient exists
+    const patient = await User.findByPk(patientId);
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Pasien tidak ditemukan'
+      });
+    }
+
+    // Check if patient already has a queue for this date
+    const existingQueue = await Queue.findOne({
+      where: {
+        userId: patientId,
+        appointmentDate,
+        status: { [Op.not]: 'cancelled' }
+      }
+    });
+
+    if (existingQueue) {
+      return res.status(400).json({
+        success: false,
+        message: 'Pasien sudah memiliki antrian pada tanggal tersebut'
+      });
+    }
+
+    const settings = await PracticeSettings.findOne({ where: { isActive: true } });
+    if (!settings) {
+      return res.status(500).json({
+        success: false,
+        message: 'Pengaturan praktik belum dikonfigurasi'
+      });
+    }
+
+    const queueCount = await Queue.count({
+      where: {
+        appointmentDate,
+        status: { [Op.not]: 'cancelled' }
+      }
+    });
+
+    if (queueCount >= settings.maxSlotsPerDay) {
+      return res.status(400).json({
+        success: false,
+        message: 'Slot antrian untuk tanggal tersebut sudah penuh'
+      });
+    }
+
+    const queueNumber = queueCount + 1;
+
+    const queue = await Queue.create({
+      userId: patientId,
+      appointmentDate,
+      queueNumber,
+      notes: notes || `Antrian dibuat manual oleh admin untuk ${patient.fullName}`
+    });
+
+    const queueWithUser = await Queue.findByPk(queue.id, {
+      include: [{ model: User, as: 'patient', attributes: ['fullName', 'phoneNumber'] }]
+    });
+
+    // Log activity
+    await logActivity({
+      type: 'queue_created',
+      title: 'Antrian manual dibuat oleh admin',
+      description: `Admin membuat antrian nomor ${queueWithUser.queueNumber} untuk ${queueWithUser.patient.fullName}`,
+      userId: queueWithUser.userId,
+      queueId: queueWithUser.id,
+      metadata: {
+        queueNumber: queueWithUser.queueNumber,
+        appointmentDate: queueWithUser.appointmentDate,
+        patientName: queueWithUser.patient.fullName,
+        createdByAdmin: true,
+        adminUserId: req.user.id
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Antrian berhasil dibuat',
+      data: { 
+        queue: queueWithUser,
+        queueNumber: queueWithUser.queueNumber
+      }
+    });
+  } catch (error) {
+    console.error('Book queue for patient error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan pada server'
+    });
+  }
+};
+
+const getReportsByDateRange = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Parameter startDate dan endDate diperlukan'
+      });
+    }
+
+    // Validate date range (max 31 days)
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 31) {
+      return res.status(400).json({
+        success: false,
+        message: 'Periode maksimal 31 hari'
+      });
+    }
+
+    if (start > end) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tanggal mulai tidak boleh lebih besar dari tanggal akhir'
+      });
+    }
+
+    // Get all queues in date range
+    const queues = await Queue.findAll({
+      where: {
+        appointmentDate: {
+          [Op.between]: [startDate, endDate]
+        }
+      },
+      include: [{ model: User, as: 'patient', attributes: ['fullName', 'phoneNumber'] }],
+      order: [['appointmentDate', 'ASC'], ['queueNumber', 'ASC']]
+    });
+
+    // Group by date and calculate stats
+    const dailyStats = {};
+    const totalStats = {
+      total: 0,
+      waiting: 0,
+      in_service: 0,
+      completed: 0,
+      cancelled: 0,
+      no_show: 0
+    };
+
+    queues.forEach(queue => {
+      const date = queue.appointmentDate;
+      
+      if (!dailyStats[date]) {
+        dailyStats[date] = {
+          total: 0,
+          waiting: 0,
+          in_service: 0,
+          completed: 0,
+          cancelled: 0,
+          no_show: 0,
+          queues: []
+        };
+      }
+      
+      // Count by status
+      dailyStats[date].total++;
+      dailyStats[date][queue.status]++;
+      dailyStats[date].queues.push(queue);
+      
+      // Add to total stats
+      totalStats.total++;
+      totalStats[queue.status]++;
+    });
+
+    // Calculate active days (days with data)
+    const activeDays = Object.keys(dailyStats).length;
+
+    res.json({
+      success: true,
+      data: {
+        startDate,
+        endDate,
+        totalDays: diffDays + 1,
+        activeDays,
+        totalStats,
+        dailyStats,
+        queues
+      }
+    });
+  } catch (error) {
+    console.error('Get reports by date range error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan pada server'
+    });
+  }
+};
+
 module.exports = {
   getAvailableSlots,
   bookQueue,
@@ -551,5 +830,7 @@ module.exports = {
   callNextQueue,
   completeQueue,
   updateQueueStatus,
-  getQueuesByDate
+  getQueuesByDate,
+  bookQueueForPatient,
+  getReportsByDateRange
 };

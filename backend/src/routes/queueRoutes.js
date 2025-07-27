@@ -8,7 +8,9 @@ const {
   callNextQueue,
   completeQueue,
   updateQueueStatus,
-  getQueuesByDate
+  getQueuesByDate,
+  bookQueueForPatient,
+  getReportsByDateRange
 } = require('../controllers/queueController');
 const { validateQueueBooking } = require('../middleware/validation');
 const { authenticate, authorize } = require('../middleware/auth');
@@ -29,5 +31,7 @@ router.post('/call-next', authenticate, authorize('admin'), callNextQueue);
 router.patch('/complete/:queueId', authenticate, authorize('admin'), completeQueue);
 router.patch('/update-status/:queueId', authenticate, authorize('admin'), updateQueueStatus);
 router.get('/by-date', authenticate, authorize('admin'), getQueuesByDate);
+router.get('/reports', authenticate, authorize('admin'), getReportsByDateRange);
+router.post('/admin-book', authenticate, authorize('admin'), bookQueueForPatient);
 
 module.exports = router;

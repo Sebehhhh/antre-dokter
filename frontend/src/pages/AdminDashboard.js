@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { queueAPI, adminAPI } from '../utils/api';
+import { getWitaDateString } from '../utils/timezone';
 
 const AdminDashboard = () => {
   const [currentQueue, setCurrentQueue] = useState(null);
@@ -28,9 +29,11 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
+      const today = getWitaDateString();
+      
       const [currentResponse, todayResponse] = await Promise.all([
         queueAPI.getCurrentQueue(),
-        queueAPI.getQueuesByDate(new Date().toISOString().split('T')[0])
+        queueAPI.getQueuesByDate(today)
       ]);
       
       setCurrentQueue(currentResponse.data.data);
@@ -271,12 +274,6 @@ const AdminDashboard = () => {
                 className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {actionLoading === 'complete' ? '⏳ Proses...' : '✅ Selesaikan'}
-              </button>
-              <button 
-                disabled={!currentQueue?.currentQueue}
-                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ⏸️ Jeda
               </button>
             </div>
           </div>

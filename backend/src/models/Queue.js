@@ -16,7 +16,7 @@ const Queue = sequelize.define('Queue', {
     allowNull: false
   },
   status: {
-    type: DataTypes.ENUM('waiting', 'in_service', 'completed', 'cancelled', 'no_show'),
+    type: DataTypes.ENUM('waiting', 'in_service', 'completed', 'cancelled', 'no_show', 'emergency_cancelled'),
     allowNull: false,
     defaultValue: 'waiting'
   },
