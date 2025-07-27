@@ -136,7 +136,7 @@ const AdminQueueManagement = () => {
           <div>
             <h3 className="font-semibold text-gray-800 text-lg">{queue.patient?.fullName || 'Nama tidak tersedia'}</h3>
             <p className="text-gray-600">{queue.patient?.phoneNumber}</p>
-            <p className="text-sm text-gray-500">Jam: {queue.appointmentTime}</p>
+            <p className="text-sm text-gray-500">Tanggal: {new Date(queue.appointmentDate).toLocaleDateString('id-ID')}</p>
           </div>
         </div>
 

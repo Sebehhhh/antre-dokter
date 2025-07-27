@@ -43,3 +43,18 @@ AntreDokter/
 ## Setup Development
 
 Lihat dokumentasi di folder `docs/` untuk panduan setup lengkap.
+
+# 1. Reset database (drop & create fresh)
+  npm run db:reset
+
+  # 2. Run migrations (create tables)
+  npm run db:migrate
+
+  # 3. Run seeders (insert initial data)
+  npm run db:seed
+
+  # 4. Start server
+  npm run dev
+
+  Atau singkat dengan satu command:
+  # npm run db:setup

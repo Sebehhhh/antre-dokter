@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { queueAPI } from '../utils/api';
 
 const AdminQueueCalendar = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  });
   const [availableSlots, setAvailableSlots] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(false);
@@ -16,7 +19,12 @@ const AdminQueueCalendar = () => {
   const checkSlotsForDate = async (date) => {
     setLoading(true);
     try {
-      const dateString = date.toISOString().split('T')[0];
+      // Format date without timezone issues
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+      
       const response = await queueAPI.getAvailableSlots(dateString);
       setAvailableSlots(response.data.data);
     } catch (error) {
@@ -217,14 +225,14 @@ const AdminQueueCalendar = () => {
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Utilisasi</span>
                         <span className="text-gray-800 font-medium">
-                          {Math.round(((availableSlots.maxSlots - availableSlots.availableSlots) / availableSlots.maxSlots) * 100)}%
+                          {availableSlots.totalBooked > 0 ? Math.round((availableSlots.totalBooked / availableSlots.maxSlots) * 100) : 0}%
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-300"
                           style={{ 
-                            width: `${((availableSlots.maxSlots - availableSlots.availableSlots) / availableSlots.maxSlots) * 100}%` 
+                            width: `${availableSlots.totalBooked > 0 ? (availableSlots.totalBooked / availableSlots.maxSlots) * 100 : 0}%` 
                           }}
                         ></div>
                       </div>

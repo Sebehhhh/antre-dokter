@@ -15,10 +15,6 @@ const Queue = sequelize.define('Queue', {
     type: DataTypes.DATEONLY,
     allowNull: false
   },
-  appointmentTime: {
-    type: DataTypes.TIME,
-    allowNull: false
-  },
   status: {
     type: DataTypes.ENUM('waiting', 'in_service', 'completed', 'cancelled', 'no_show'),
     allowNull: false,

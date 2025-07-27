@@ -31,47 +31,15 @@ const getAvailableSlots = async (req, res) => {
       });
     }
 
-    // Get all booked time slots for the date
+    // Get all booked queues for the date
     const bookedQueues = await Queue.findAll({
       where: {
         appointmentDate: date,
         status: { [Op.not]: 'cancelled' }
       },
-      attributes: ['appointmentTime', 'queueNumber'],
-      order: [['appointmentTime', 'ASC']]
+      attributes: ['queueNumber'],
+      order: [['queueNumber', 'ASC']]
     });
-
-    const bookedTimes = bookedQueues.map(queue => queue.appointmentTime);
-    
-    // Generate all possible time slots
-    const startHour = parseInt(settings.operatingHours.start.split(':')[0]);
-    const endHour = parseInt(settings.operatingHours.end.split(':')[0]);
-    const currentTime = new Date();
-    const isToday = requestDate.toDateString() === currentTime.toDateString();
-    const currentHour = currentTime.getHours();
-    const currentMinutes = currentTime.getMinutes();
-
-    const timeSlots = [];
-    for (let hour = startHour; hour < endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) { // 30 minute slots
-        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        
-        // Skip past times if it's today
-        if (isToday) {
-          const slotHour = hour;
-          const slotMinute = minute;
-          if (slotHour < currentHour || (slotHour === currentHour && slotMinute <= currentMinutes)) {
-            continue;
-          }
-        }
-
-        timeSlots.push({
-          time: timeString,
-          isBooked: bookedTimes.includes(timeString),
-          isAvailable: !bookedTimes.includes(timeString)
-        });
-      }
-    }
 
     const totalBooked = bookedQueues.length;
     const availableSlots = settings.maxSlotsPerDay - totalBooked;
@@ -82,9 +50,9 @@ const getAvailableSlots = async (req, res) => {
         date,
         availableSlots: Math.max(0, availableSlots),
         maxSlots: settings.maxSlotsPerDay,
+        totalBooked,
         operatingHours: settings.operatingHours,
-        timeSlots,
-        bookedTimes
+        operatingDays: settings.operatingDays
       }
     });
   } catch (error) {
@@ -98,7 +66,7 @@ const getAvailableSlots = async (req, res) => {
 
 const bookQueue = async (req, res) => {
   try {
-    const { appointmentDate, appointmentTime } = req.body;
+    const { appointmentDate } = req.body;
     const userId = req.user.id;
 
     const existingQueue = await Queue.findOne({
@@ -136,7 +104,6 @@ const bookQueue = async (req, res) => {
     const queue = await Queue.create({
       userId,
       appointmentDate,
-      appointmentTime,
       queueNumber
     });
 
@@ -154,7 +121,6 @@ const bookQueue = async (req, res) => {
       metadata: {
         queueNumber: queueWithUser.queueNumber,
         appointmentDate: queueWithUser.appointmentDate,
-        appointmentTime: queueWithUser.appointmentTime,
         patientName: queueWithUser.patient.fullName
       }
     });
@@ -179,7 +145,7 @@ const getMyQueues = async (req, res) => {
     
     const queues = await Queue.findAll({
       where: { userId },
-      order: [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC']],
+      order: [['appointmentDate', 'DESC'], ['queueNumber', 'DESC']],
       limit: 20
     });
 
@@ -257,15 +223,18 @@ const cancelQueue = async (req, res) => {
       });
     }
 
-    const settings = await PracticeSettings.findOne({ where: { isActive: true } });
-    const appointmentDateTime = new Date(`${queue.appointmentDate}T${queue.appointmentTime}`);
+    // Check if it's still possible to cancel (e.g., not on the same day or past operating hours)
+    const today = new Date().toISOString().split('T')[0];
+    const appointmentDate = queue.appointmentDate;
+    
+    // Allow cancellation if appointment is not today, or if it's today but still early
     const now = new Date();
-    const timeDiff = (appointmentDateTime - now) / (1000 * 60);
-
-    if (timeDiff < settings.cancellationDeadline) {
+    const currentHour = now.getHours();
+    
+    if (appointmentDate === today && currentHour >= 8) { // Assuming practice starts at 8 AM
       return res.status(400).json({
         success: false,
-        message: `Antrian hanya dapat dibatalkan minimal ${settings.cancellationDeadline} menit sebelum jadwal`
+        message: 'Antrian tidak dapat dibatalkan pada hari yang sama setelah jam praktik dimulai'
       });
     }
 
@@ -286,7 +255,6 @@ const cancelQueue = async (req, res) => {
         queueNumber: queueWithUser.queueNumber,
         patientName: queueWithUser.patient.fullName,
         appointmentDate: queueWithUser.appointmentDate,
-        appointmentTime: queueWithUser.appointmentTime,
         cancelledAt: new Date()
       }
     });

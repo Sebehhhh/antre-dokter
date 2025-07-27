@@ -36,7 +36,7 @@ const getRecentActivities = async (req, res) => {
         {
           model: Queue,
           as: 'queue',
-          attributes: ['queueNumber', 'appointmentDate', 'appointmentTime'],
+          attributes: ['queueNumber', 'appointmentDate'],
           required: false
         }
       ],

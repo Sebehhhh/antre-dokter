@@ -1,0 +1,34 @@
+'use strict';
+
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    const [results] = await queryInterface.sequelize.query(
+      "SELECT COUNT(*) as count FROM practice_settings WHERE \"isActive\" = true"
+    );
+    
+    if (results[0].count > 0) {
+      console.log('Practice settings already exist, skipping seed...');
+      return;
+    }
+
+    await queryInterface.bulkInsert('practice_settings', [{
+      id: Sequelize.literal('gen_random_uuid()'),
+      doctorName: 'Dr. Ahmad Pratama',
+      practiceName: 'Klinik Sehat Bersama',
+      practiceAddress: 'Jl. Kesehatan No. 123, Jakarta Selatan',
+      practicePhone: '(021) 1234-5678',
+      operatingDays: JSON.stringify([0, 1, 2, 3, 4, 5, 6]), // All days
+      operatingHours: JSON.stringify({ start: '08:00', end: '17:00' }),
+      maxSlotsPerDay: 50,
+      allowWalkIn: false,
+      cancellationDeadline: 30,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }]);
+  },
+
+  down: async (queryInterface, Sequelize) => {
+    await queryInterface.bulkDelete('practice_settings', null, {});
+  }
+};

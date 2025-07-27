@@ -112,13 +112,8 @@ const startServer = async () => {
     console.log('Database connection established successfully.');
     
     if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('Database synchronized successfully.');
-      
-      // Seed initial data
-      const { seedPracticeSettings, seedAdminUser } = require('./src/scripts/seedData');
-      await seedPracticeSettings();
-      await seedAdminUser();
+      // Use migration instead of sync for better control
+      console.log('Database ready. Use migrations for schema changes.');
     }
 
     server.listen(PORT, () => {

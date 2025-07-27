@@ -51,9 +51,6 @@ const validateQueueBooking = [
       }
       return true;
     }),
-  body('appointmentTime')
-    .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
-    .withMessage('Format waktu tidak valid (HH:MM)'),
   handleValidationErrors
 ];
 

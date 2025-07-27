@@ -12,6 +12,7 @@ import AdminQueueCalendar from './pages/AdminQueueCalendar';
 import AdminQueueManagement from './pages/AdminQueueManagement';
 import AdminPatients from './pages/AdminPatients';
 import AdminReports from './pages/AdminReports';
+import PatientHistory from './pages/PatientHistory';
 
 function App() {
   return (
@@ -33,6 +34,14 @@ function App() {
             <PrivateRoute allowedRoles={['patient']}>
               <Layout>
                 <BookQueue />
+              </Layout>
+            </PrivateRoute>
+          } />
+          
+          <Route path="/history" element={
+            <PrivateRoute allowedRoles={['patient']}>
+              <Layout>
+                <PatientHistory />
               </Layout>
             </PrivateRoute>
           } />

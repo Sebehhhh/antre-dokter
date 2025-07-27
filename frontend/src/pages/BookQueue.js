@@ -4,11 +4,9 @@ import { queueAPI } from '../utils/api';
 
 const BookQueue = () => {
   const [formData, setFormData] = useState({
-    appointmentDate: '',
-    appointmentTime: ''
+    appointmentDate: ''
   });
   const [availableSlots, setAvailableSlots] = useState(null);
-  const [timeSlots, setTimeSlots] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -31,13 +29,9 @@ const BookQueue = () => {
       const response = await queueAPI.getAvailableSlots(formData.appointmentDate);
       const data = response.data.data;
       setAvailableSlots(data);
-      setTimeSlots(data.timeSlots || []);
-      // Reset selected time when date changes
-      setFormData(prev => ({ ...prev, appointmentTime: '' }));
     } catch (error) {
       console.error('Error checking available slots:', error);
       setError('Gagal memeriksa slot yang tersedia');
-      setTimeSlots([]);
     }
   };
 
@@ -71,72 +65,13 @@ const BookQueue = () => {
     }
   };
 
-  const handleTimeSlotSelect = (time) => {
-    setFormData(prev => ({ ...prev, appointmentTime: time }));
-    setError('');
-  };
-
-  const TimeSlotPicker = () => {
-    if (timeSlots.length === 0) return null;
-
-    return (
-      <div className="space-y-4">
-        <label className="form-label">Pilih Waktu Kunjungan</label>
-        
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <div className="flex items-center space-x-4 mb-4 text-sm">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded"></div>
-              <span className="text-gray-600">Tersedia</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-red-100 border-2 border-red-500 rounded"></div>
-              <span className="text-gray-600">Terisi</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-blue-500 rounded"></div>
-              <span className="text-gray-600">Dipilih</span>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-            {timeSlots.map((slot) => (
-              <button
-                key={slot.time}
-                type="button"
-                onClick={() => slot.isAvailable && handleTimeSlotSelect(slot.time)}
-                disabled={!slot.isAvailable}
-                className={`p-3 rounded-lg text-sm font-medium border-2 transition-all duration-200 ${
-                  formData.appointmentTime === slot.time
-                    ? 'bg-blue-500 text-white border-blue-500 shadow-md'
-                    : slot.isAvailable
-                    ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:border-green-300'
-                    : 'bg-red-50 text-red-400 border-red-200 cursor-not-allowed'
-                }`}
-              >
-                {slot.time}
-              </button>
-            ))}
-          </div>
-          
-          {formData.appointmentTime && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-blue-700 text-sm font-medium">
-                ✅ Waktu terpilih: {formData.appointmentTime}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Buat Antrian Baru</h1>
-          <p className="text-gray-600 mt-2">Pilih tanggal dan waktu kunjungan Anda</p>
+          <p className="text-gray-600 mt-2">Pilih tanggal kunjungan Anda - nomor antrian akan diberikan otomatis</p>
         </div>
 
         {error && (
@@ -186,20 +121,34 @@ const BookQueue = () => {
               </div>
               <div className="mt-3 pt-3 border-t border-blue-200">
                 <p className="text-blue-700 text-sm">
-                  <span className="font-medium">Jam operasional:</span> {availableSlots.operatingHours.start} - {availableSlots.operatingHours.end}
+                  <span className="font-medium">Jam operasional:</span> {availableSlots.operatingHours?.start} - {availableSlots.operatingHours?.end}
+                </p>
+                <p className="text-blue-600 text-sm mt-1">
+                  <span className="font-medium">Antrian berikutnya:</span> Nomor {availableSlots.totalBooked + 1}
                 </p>
               </div>
             </div>
           )}
 
-          {availableSlots?.availableSlots > 0 ? (
-            <TimeSlotPicker />
-          ) : availableSlots && (
+          {availableSlots && availableSlots.availableSlots === 0 && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
               <div className="text-red-500 text-4xl mb-3">😞</div>
               <h3 className="text-lg font-semibold text-red-800 mb-2">Slot Penuh</h3>
               <p className="text-red-600">
                 Maaf, semua slot untuk tanggal tersebut sudah terisi. Silakan pilih tanggal lain.
+              </p>
+            </div>
+          )}
+
+          {availableSlots && availableSlots.availableSlots > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+              <div className="text-green-500 text-4xl mb-3">✅</div>
+              <h3 className="text-lg font-semibold text-green-800 mb-2">Siap Membuat Antrian</h3>
+              <p className="text-green-600">
+                Nomor antrian Anda akan menjadi: <span className="font-bold text-2xl">#{availableSlots.totalBooked + 1}</span>
+              </p>
+              <p className="text-green-600 text-sm mt-2">
+                Silakan klik "Buat Antrian" untuk melanjutkan
               </p>
             </div>
           )}
@@ -215,7 +164,7 @@ const BookQueue = () => {
             
             <button
               type="submit"
-              disabled={loading || !availableSlots || availableSlots.availableSlots === 0 || !formData.appointmentTime}
+              disabled={loading || !availableSlots || availableSlots.availableSlots === 0}
               className="btn-primary flex-1 disabled:opacity-50"
             >
               {loading ? 'Memproses...' : 'Buat Antrian'}

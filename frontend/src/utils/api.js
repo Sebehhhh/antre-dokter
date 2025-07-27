@@ -62,6 +62,13 @@ export const adminAPI = {
     return api.get(`/admin/activities${query ? `?${query}` : ''}`);
   },
   getActivityStats: (date) => api.get(`/admin/activities/stats?date=${date}`),
+  getAllPatients: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return api.get(`/admin/patients${query ? `?${query}` : ''}`);
+  },
+  getPatientStats: () => api.get('/admin/patients/stats'),
+  getPatientDetail: (patientId) => api.get(`/admin/patients/${patientId}`),
+  updatePatientStatus: (patientId, data) => api.put(`/admin/patients/${patientId}/status`, data),
 };
 
 export default api;

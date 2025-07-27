@@ -137,7 +137,7 @@ const AdminDashboard = () => {
           </div>
           <div>
             <p className="font-semibold text-gray-800">{queue.patient?.fullName || 'Nama tidak tersedia'}</p>
-            <p className="text-sm text-gray-600">{queue.appointmentTime}</p>
+            <p className="text-sm text-gray-600">Antrian #{queue.queueNumber}</p>
           </div>
         </div>
         <div className="text-right">

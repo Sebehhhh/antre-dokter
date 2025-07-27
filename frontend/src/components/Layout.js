@@ -19,7 +19,7 @@ const Layout = ({ children }) => {
   const patientMenuItems = [
     { path: '/dashboard', label: 'Home', icon: '🏠' },
     { path: '/book-queue', label: 'Booking', icon: '➕' },
-    { path: '/my-queues', label: 'Riwayat', icon: '📋' },
+    { path: '/history', label: 'Riwayat', icon: '📋' },
   ];
 
   const menuItems = user?.role === 'admin' ? adminMenuItems : patientMenuItems;
