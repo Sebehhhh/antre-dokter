@@ -1,30 +1,28 @@
 # AntreDokter - Sistem Antrian Dokter Online
 
-Aplikasi web untuk mengelola antrian pasien dokter dengan fitur real-time notification dan laporan komprehensif.
+Aplikasi web untuk mengelola antrian pasien dokter dengan fitur real-time notification dan laporan komprehensif. Sistem ini dirancang khusus untuk praktek dokter dengan dua tipe pengguna utama: **Admin** dan **Pasien**.
 
 ## Fitur Utama
 
 ### 🏥 Modul Pasien
 - Pendaftaran dan login akun pasien
-- Pemesanan antrian online
+- Pemesanan antrian online dengan pemilihan tanggal dan slot waktu
 - Melihat status antrian real-time
 - Riwayat pemesanan lengkap
-- Pembatalan antrian
-- Notifikasi real-time
+- Pembatalan antrian dengan notifikasi otomatis
+- Notifikasi real-time untuk update status antrian
+- Request reschedule antrian jika diperlukan
 
-### 👨‍💼 Modul Admin/Resepsionis
-- Manajemen pasien
-- Manajemen antrian real-time
-- Dashboard dengan statistik
-- Laporan periode dengan filter tanggal
-- Pengaturan praktik
-- Emergency closure system
-- Kalender antrian
-
-### 👨‍⚕️ Modul Dokter
-- Melihat daftar antrian harian
-- Mengatur status pasien (panggil, selesai, batal)
-- Monitoring real-time queue
+### 👨‍💼 Modul Admin
+- **Manajemen Pasien**: Kelola data pasien, lihat riwayat kunjungan
+- **Manajemen Antrian Real-time**: Monitor dan update status antrian (panggil, selesai, batal)
+- **Dashboard Statistik**: Overview harian dengan grafik dan metrics
+- **Laporan Komprehensif**: Report bulanan/periode dengan filter tanggal dan export
+- **Pengaturan Praktik**: Konfigurasi jam operasional, slot waktu, dan quota harian
+- **Emergency Closure**: Sistem penutupan darurat dengan notifikasi otomatis ke semua pasien
+- **Kalender Antrian**: View kalender lengkap dengan management antrian
+- **Notifikasi Management**: Kelola dan kirim notifikasi ke pasien
+- **Reschedule Management**: Approve/reject request reschedule dari pasien
 
 ## Struktur Proyek
 
